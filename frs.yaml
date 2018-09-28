@@ -45,12 +45,12 @@ spec:
         app: frs
 
     spec:
-     
+
       imagePullSecrets:
       - name: regsecret
       containers:
       - name: frs
-        image: infacloud-iics-docker.jfrog.io/kubefrs:28
+        image: infacloud-iics-docker.jfrog.io/kubefrs:27
         lifecycle:
           preStop:
             exec:
@@ -82,13 +82,13 @@ spec:
              path: /frs/mgmtapi/healthy
              port: 21018
            initialDelaySeconds: 10
-           periodSeconds: 5  
+           periodSeconds: 5
       volumes:
       - name: infaca
         secret:
           secretName: docker-certificates-frs
       - name: environment
-        secret: 
+        secret:
           secretName: docker-environment
 #apiVersion: autoscaling/v2beta1
 #kind: HorizontalPodAutoscaler
@@ -110,4 +110,3 @@ spec:
     # resource:
       # name: memory
       # targetAverageValue: 1200Mi
-      
