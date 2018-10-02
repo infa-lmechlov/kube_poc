@@ -50,7 +50,7 @@ spec:
       - name: regsecret
       containers:
       - name: frs
-        image: infacloud-iics-docker.jfrog.io/kubefrs:28
+        image: infacloud-iics-docker.jfrog.io/kubefrs:27
         lifecycle:
           preStop:
             exec:
