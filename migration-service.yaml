@@ -1,0 +1,113 @@
+# volumes:
+#             # - ./artifacts/migration.war:/opt/tomcat_migration/webapps/migration.war
+#             - ./security/certs/migration/migration/migration-bundle.pem:/etc/ssl/infaca/host-bundle.pem
+#             - ./security/certs/migration/migration/migration-key.pem:/etc/ssl/infaca/host-key.pem
+#             - ./security/certs/migration/migration/migration-keystore.jks:/etc/ssl/infaca/keystore.jks
+#             - ./security/root/root-ca-bundle.pem:/etc/ssl/infaca/ca-bundle.pem
+#             - ./security/root/root-truststore.jks:/etc/ssl/infaca/truststore.jks
+#             - /dev/urandom:/dev/random
+#             - $CHEF_DIR/environments/${CHEF_ENVIRONMENT}.json:/opt/chef/environments/docker-dev.json
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: migration
+  annotations:
+        service.beta.kubernetes.io/aws-load-balancer-backend-protocol: https
+        service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443,8443"
+  namespace: lior
+spec:
+  selector:
+    app: migration
+  ports:
+  - protocol: TCP
+    port: 8443
+    targetPort: 16018
+    name: https
+  - protocol: TCP
+    port: 18024
+    targetPort: 8000
+    name: jpda
+  type: LoadBalancer
+---
+kind: Deployment
+apiVersion: apps/v1beta1 # for versions before 1.6.0 use extensions/v1beta1
+metadata:
+  name: migration
+  namespace: lior
+  labels:
+    version: v1
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: migration
+
+    spec:
+     
+      imagePullSecrets:
+      - name: regsecret
+      containers:
+      - name: migration
+        image: infacloud-iics-docker.jfrog.io/kubemigration-service:5
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/opt/tomcat_migration/bin/shutdown.sh"]
+        resources:
+            limits:
+                memory: "1500M"
+            requests:
+                memory: "1500M"
+        volumeMounts:
+        - name: infaca
+          mountPath: "/etc/ssl/infaca"
+          readOnly: true
+        - name: environment
+          mountPath: "/opt/chef/environments"
+          readOnly: true
+
+        ports:
+        - containerPort: 16018
+
+        livenessProbe:
+           httpGet:
+             path: /migration/mgmtapi/healthy
+             port: 21018
+           initialDelaySeconds: 30
+           periodSeconds: 5
+        readinessProbe:
+           httpGet:
+             path: /migration/mgmtapi/healthy
+             port: 21018
+           initialDelaySeconds: 10
+           periodSeconds: 5  
+      volumes:
+      - name: infaca
+        secret:
+          secretName: docker-certificates-migration
+      - name: environment
+        secret: 
+          secretName: docker-environment
+#apiVersion: autoscaling/v2beta1
+#kind: HorizontalPodAutoscaler
+# metadata:
+  # name: migration
+# spec:
+  # scaleTargetRef:
+    # apiVersion: extensions/v1beta1
+    # kind: Deployment
+    # name: migration
+  # minReplicas: 1
+  # maxReplicas: 10
+  # metrics:
+  # - type: Resource
+    # resource:
+      # name: cpu
+      # targetAverageUtilization: 80
+  # - type: Resource
+    # resource:
+      # name: memory
+      # targetAverageValue: 1200Mi
+      
