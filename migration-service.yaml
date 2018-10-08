@@ -9,7 +9,6 @@
 #             - $CHEF_DIR/environments/${CHEF_ENVIRONMENT}.json:/opt/chef/environments/docker-dev.json
 apiVersion: v1
 kind: Service
-apiVersion: v1
 metadata:
   name: migration
   annotations:
