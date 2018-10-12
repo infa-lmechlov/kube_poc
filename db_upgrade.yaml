@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-upgrade
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+      - name: regsecret
+      containers:
+      - name: db-upgrade
+        image: infacloud-iics-docker.jfrog.io/kubefrs:37
+        #command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+        env:
+        - name: RUN_RECIPE
+          value: db-upgrade
+        volumeMounts:
+        - name: infaca
+          mountPath: "/etc/ssl/infaca"
+          readOnly: true
+        - name: environment
+          mountPath: "/opt/chef/environments"
+          readOnly: true
+      volumes:
+      - name: infaca
+        secret:
+          secretName: docker-certificates-frs
+      - name: environment
+        secret:
+          secretName: docker-environment
+      restartPolicy: Never
+  backoffLimit: 4
